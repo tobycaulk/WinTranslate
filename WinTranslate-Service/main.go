@@ -12,7 +12,7 @@ import (
 )
 
 type TranslationRequest struct {
-	Text string
+	Text         string
 	LanguageCode string
 }
 
@@ -22,7 +22,7 @@ type TranslationResponse struct {
 
 func getGoogleClient() translate.Client {
 	ctx := context.Background()
-	client, err := translate.NewClient(ctx, option.WithCredentialsFile("C:\\Users\\tobyc\\Documents\\Git\\Environment\\wintranslate-api-key.json"))
+	client, err := translate.NewClient(ctx, option.WithCredentialsFile("/Users/tobycaulk/src/env/wintranslate-api-key.json"))
 	if err != nil {
 		fmt.Println("Error while retrieving Google Cloud client", err)
 	}
@@ -30,14 +30,31 @@ func getGoogleClient() translate.Client {
 	return *client
 }
 
+func getParsedLanguageFromCode(languageCode string) (language.Tag, error) {
+	lang, err := language.Parse(languageCode)
+	if err != nil {
+		return language.Tag{}, err
+	}
+
+	return lang, nil
+}
+
 func getTranslatedText(text string, languageCode string) string {
 	ctx := context.Background()
-	var client = getGoogleClient()
+	client := getGoogleClient()
 	defer client.Close()
 
-	lang, _ := language.Parse(languageCode)
+	language, err := getParsedLanguageFromCode(languageCode)
+	if err != nil {
+		fmt.Println("Error while parsing language code", err)
+		return ""
+	}
 
-	res, _ := client.Translate(ctx, []string{text}, lang, nil)
+	res, err := client.Translate(ctx, []string{text}, language, nil)
+	if err != nil {
+		fmt.Println("Error while retrieving translation", err)
+	}
+
 	return res[0].Text
 }
 
@@ -50,7 +67,8 @@ func handleTranslate(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	translationResponse := TranslationResponse{Text: getTranslatedText(translationRequest.Text, translationRequest.LanguageCode)}
+	translatedText := getTranslatedText(translationRequest.Text, translationRequest.LanguageCode)
+	translationResponse := TranslationResponse{Text: translatedText}
 	json.NewEncoder(res).Encode(translationResponse)
 }
 
