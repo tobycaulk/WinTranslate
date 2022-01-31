@@ -80,6 +80,15 @@ func getTranslatedTextFromGoogle(text string, languageCode string) string {
 	return res[0].Text
 }
 
+func getParsedLanguageFromCode(languageCode string) (language.Tag, error) {
+	lang, err := language.Parse(languageCode)
+	if err != nil {
+		return language.Tag{}, err
+	}
+
+	return lang, nil
+}
+
 func getTranslatedText(text string, languageCode string) string {
 	redisTranslation := getTranslatedTextFromRedis(text)
 	if len(redisTranslation) != 0 && redisTranslation != "" {
